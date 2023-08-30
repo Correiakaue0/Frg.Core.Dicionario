@@ -5,6 +5,7 @@ using Microsoft.AspNetCore.Mvc;
 using System.Collections;
 using System.ComponentModel.Design;
 using System.Resources;
+using static System.Net.Mime.MediaTypeNames;
 
 namespace Frg.Core.Dicionario.Controllers
 {
@@ -13,63 +14,70 @@ namespace Frg.Core.Dicionario.Controllers
     public class WordApiController : ControllerBase
     {
         [HttpGet]
-        public IList<WordsViewModel> GetWords()
+        public IActionResult GetWords()
         {
-            ResXResourceReader resourceReaderPortuguese = new ResXResourceReader(ConfigSystem.FilePathPortuguese);
-            ResXResourceReader resourceReaderEnglish = new ResXResourceReader(ConfigSystem.FilePathEnglish);
-            ResXResourceReader resourceReaderSpanish = new ResXResourceReader(ConfigSystem.FilePathSpanish);
-
-            var wordsList = new List<WordsDTO>();
-
-            resourceReaderPortuguese.UseResXDataNodes = true;
-            IDictionaryEnumerator enumeratorPortuguese = resourceReaderPortuguese.GetEnumerator();
-
-            resourceReaderEnglish.UseResXDataNodes = true;
-            IDictionaryEnumerator enumeratorEnglish = resourceReaderEnglish.GetEnumerator();
-
-            resourceReaderSpanish.UseResXDataNodes = true;
-            IDictionaryEnumerator enumeratorSpanish = resourceReaderSpanish.GetEnumerator();
-
-            while (enumeratorPortuguese.MoveNext())
+            try
             {
-                string name = enumeratorPortuguese.Key.ToString();
-                string value = (enumeratorPortuguese.Value as ResXDataNode)?.GetValue((ITypeResolutionService)null).ToString();
+                ResXResourceReader resourceReaderPortuguese = new ResXResourceReader(ConfigSystem.FilePathPortuguese);
+                ResXResourceReader resourceReaderEnglish = new ResXResourceReader(ConfigSystem.FilePathEnglish);
+                ResXResourceReader resourceReaderSpanish = new ResXResourceReader(ConfigSystem.FilePathSpanish);
 
-                var word = new WordsDTO(0, name, value);
-                wordsList.Add(word);
+                var wordsList = new List<WordsDTO>();
+
+                resourceReaderPortuguese.UseResXDataNodes = true;
+                IDictionaryEnumerator enumeratorPortuguese = resourceReaderPortuguese.GetEnumerator();
+
+                resourceReaderEnglish.UseResXDataNodes = true;
+                IDictionaryEnumerator enumeratorEnglish = resourceReaderEnglish.GetEnumerator();
+
+                resourceReaderSpanish.UseResXDataNodes = true;
+                IDictionaryEnumerator enumeratorSpanish = resourceReaderSpanish.GetEnumerator();
+
+                while (enumeratorPortuguese.MoveNext())
+                {
+                    string name = enumeratorPortuguese.Key.ToString();
+                    string value = (enumeratorPortuguese.Value as ResXDataNode)?.GetValue((ITypeResolutionService)null).ToString();
+
+                    var word = new WordsDTO(0, name, value);
+                    wordsList.Add(word);
+                }
+
+                while (enumeratorEnglish.MoveNext())
+                {
+                    string name = enumeratorEnglish.Key.ToString();
+                    string value = (enumeratorEnglish.Value as ResXDataNode)?.GetValue((ITypeResolutionService)null).ToString();
+
+                    var word = new WordsDTO(1, name, value);
+                    wordsList.Add(word);
+                }
+
+                while (enumeratorSpanish.MoveNext())
+                {
+                    string name = enumeratorSpanish.Key.ToString();
+                    string value = (enumeratorSpanish.Value as ResXDataNode)?.GetValue((ITypeResolutionService)null).ToString();
+
+                    var word = new WordsDTO(2, name, value);
+                    wordsList.Add(word);
+                }
+
+                var response = wordsList
+                   .GroupBy(x => x.Name)
+                   .Select(x => new WordsViewModel
+                   {
+                       Name = x.Key,
+                       Portuguese = x.Where(x => x.Language == 0).Select(x => x.Value).FirstOrDefault(),
+                       English = x.Where(x => x.Language == 1).Select(x => x.Value).FirstOrDefault(),
+                       Spanish = x.Where(x => x.Language == 2).Select(x => x.Value).FirstOrDefault()
+                   })
+                   .ToList();
+
+
+                return Ok(response);
             }
-
-            while (enumeratorEnglish.MoveNext())
+            catch (Exception ex)
             {
-                string name = enumeratorEnglish.Key.ToString();
-                string value = (enumeratorEnglish.Value as ResXDataNode)?.GetValue((ITypeResolutionService)null).ToString();
-
-                var word = new WordsDTO(1, name, value);
-                wordsList.Add(word);
+                return BadRequest(ex.Message);
             }
-
-            while (enumeratorSpanish.MoveNext())
-            {
-                string name = enumeratorSpanish.Key.ToString();
-                string value = (enumeratorSpanish.Value as ResXDataNode)?.GetValue((ITypeResolutionService)null).ToString();
-
-                var word = new WordsDTO(2, name, value);
-                wordsList.Add(word);
-            }
-
-            var response = wordsList
-               .GroupBy(x => x.Name)
-               .Select(x => new WordsViewModel
-               {
-                   Name = x.Key,
-                   Portuguese = x.Where(x => x.Language == 0).Select(x => x.Value).FirstOrDefault(),
-                   English = x.Where(x => x.Language == 1).Select(x => x.Value).FirstOrDefault(),
-                   Spanish = x.Where(x => x.Language == 2).Select(x => x.Value).FirstOrDefault()
-               })
-               .ToList();
-
-
-            return response;
         }
 
         [HttpPost]
@@ -133,6 +141,36 @@ namespace Frg.Core.Dicionario.Controllers
             }
         }
 
+        [HttpPost, Route("Batch")]
+        public IActionResult Batch(BatchViewModel receive)
+        {
+            try
+            {
+                var listWords = receive.Receive.Split("/n");
+
+                foreach (var words in listWords)
+                {
+                    if (words.Count() != 1)
+                    {
+                        var word = words.Split("|");
+
+                        var newWord = new WordsViewModel();
+                        newWord.Name = word[0].Replace("/n", "").Trim(); ;
+                        newWord.Portuguese = word[1];
+                        newWord.English = word[2];
+                        newWord.Spanish = word[3];
+
+                        Insert(newWord);
+                    }
+                }
+                return Ok();
+            }
+            catch (Exception ex)
+            {
+                return BadRequest();
+            }
+        }
+
         public static void InsertWord(string filePath, string newName, string newValue)
         {
             var wordsList = new List<WordsDTO>();
@@ -146,6 +184,9 @@ namespace Frg.Core.Dicionario.Controllers
                 {
                     string name = enumerator.Key.ToString();
                     string value = (enumerator.Value as ResXDataNode)?.GetValue((ITypeResolutionService)null).ToString();
+
+                    if (newName.Trim() == name)
+                        throw new Exception("'Name' ja utilizado!");
 
                     var word = new WordsDTO(1, name, value);
                     wordsList.Add(word);

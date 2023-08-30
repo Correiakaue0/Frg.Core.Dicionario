@@ -42,7 +42,7 @@ const store = new DevExpress.data.CustomStore({
                 message("Palavra inserida com sucesso!", "success")
             },
             error: function (data) {
-                message("Palavra nao inserida com sucesso!", "error")
+                message(data.responseText, "error")
             }
         });
     },
@@ -59,7 +59,7 @@ const store = new DevExpress.data.CustomStore({
                 });
             },
             error() {
-                deferred.reject('Data Loading Error');
+                deferred.reject('Não foi encontrado nenhuma palavra');
             },
             timeout: 10000,
         });
