@@ -5,7 +5,6 @@ using Microsoft.AspNetCore.Mvc;
 using System.Collections;
 using System.ComponentModel.Design;
 using System.Resources;
-using static System.Net.Mime.MediaTypeNames;
 
 namespace Frg.Core.Dicionario.Controllers
 {
