@@ -152,14 +152,16 @@ namespace Frg.Core.Dicionario.Controllers
                     if (words.Count() != 1)
                     {
                         var word = words.Split("|");
+                        if (!string.IsNullOrEmpty(word[0]))
+                        { 
+                            var newWord = new WordsViewModel();
+                            newWord.Name = word[0].Replace("/n", "").Trim();
+                            newWord.Portuguese = word[1];
+                            newWord.English = word[2];
+                            newWord.Spanish = word[3];
 
-                        var newWord = new WordsViewModel();
-                        newWord.Name = word[0].Replace("/n", "").Trim(); ;
-                        newWord.Portuguese = word[1];
-                        newWord.English = word[2];
-                        newWord.Spanish = word[3];
-
-                        Insert(newWord);
+                            Insert(newWord);
+                        }
                     }
                 }
                 return Ok();

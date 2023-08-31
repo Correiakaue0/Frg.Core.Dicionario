@@ -10,10 +10,10 @@ function traduzir() {
         headers: { "content-type": "application/json" },
         data: JSON.stringify(receive),
         success: function (data) {
-            message("Palavra atualizada com sucesso!", "success")
+            message("Palavras inseridas com sucesso!", "success")
         },
         error: function (data) {
-            message("Palavra nao atualizada com sucesso!", "error")
+            message("Palavra nao inseridas com sucesso!", "error")
         }
     });
 }

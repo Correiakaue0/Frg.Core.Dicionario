@@ -80,14 +80,18 @@ $('#grid').dxDataGrid({
     },
     columns: [{
         dataField: 'name',
+        caption: 'Chave',
     }, {
         dataField: 'portuguese',
+        caption: 'Portugues',
     },
     {
         dataField: 'english',
+        caption: 'Ingles',
     },
     {
         dataField: 'spanish',
+        caption: 'Espanhol',
     }],
     showBorders: true,
     paging: {
@@ -100,6 +104,13 @@ $('#grid').dxDataGrid({
     searchPanel: {
         visible: true,
         highlightCaseSensitive: false,
+    },
+    summary: {
+        totalItems: [{
+            column: 'name',
+            summaryType: 'count',
+            displayFormat: 'Total de Palavras: {0}'
+        }],
     },
     allowColumnReordering: true,
     rowAlternationEnabled: true,
